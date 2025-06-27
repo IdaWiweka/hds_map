@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #5a6fd8; }
+    </style>
+</head>
+<body>
+    <h1>Google Sheets API Test</h1>
+    <button onclick="testAPI()">Test Google Sheets API</button>
+    <div id="result"></div>
+
+    <script>
+        const GOOGLE_SHEETS_CONFIG = {
+            SHEET_ID: '1c4L79Iqlf8frj-8dxk2sBQT3bM0G-Uj3gE8HjR_rVOM',
+            API_KEY: 'AIzaSyCtGCzaAoVnjTK6CrETdMEaSPeeAZ8i1DE',
+            SHEET_NAME: 'Universities'
+        };
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Testing API...</div>';
+
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEETS_CONFIG.SHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEET_NAME}?key=${GOOGLE_SHEETS_CONFIG.API_KEY}`;
+                
+                console.log('Testing URL:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error?.message || 'Unknown error'}`);
+                }
+                
+                if (!data.values || data.values.length === 0) {
+                    throw new Error('No data found in Google Sheets');
+                }
+                
+                const headers = data.values[0];
+                const rows = data.values.slice(1);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>✅ API Test Successful!</h3>
+                        <p><strong>Headers:</strong> ${headers.join(', ')}</p>
+                        <p><strong>Number of rows:</strong> ${rows.length}</p>
+                        <p><strong>First row:</strong> ${rows[0] ? rows[0].join(', ') : 'No data'}</p>
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('API Test Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ API Test Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Check the browser console for more details.</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

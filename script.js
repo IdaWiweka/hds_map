@@ -4,7 +4,7 @@ let markers = [];
 let infoWindows = [];
 let universities = [];
 let filteredUniversities = [];
-let markerClusterer;
+let markerClustererInstance;
 let isClustered = true;
 
 // Google Sheets configuration
@@ -19,13 +19,39 @@ const GOOGLE_SHEETS_CONFIG = {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    initializeMap();
-    setupEventListeners();
-    loadUniversities();
+    console.log('DOM loaded, starting initialization...');
+    
+    // Check if Google Maps API is loaded
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        console.error('Google Maps API not loaded');
+        showError('Google Maps API failed to load. Please refresh the page.');
+        return;
+    }
+    
+    console.log('Google Maps API loaded successfully');
+    
+    try {
+        console.log('Initializing map...');
+        initializeMap();
+        console.log('Map initialized successfully');
+        
+        console.log('Setting up event listeners...');
+        setupEventListeners();
+        console.log('Event listeners set up successfully');
+        
+        console.log('Loading universities...');
+        loadUniversities();
+        console.log('Load universities called');
+        
+    } catch (error) {
+        console.error('Error during initialization:', error);
+        showError('Failed to initialize application: ' + error.message);
+    }
 });
 
 // Initialize Google Maps
 function initializeMap() {
+    console.log('Creating map options...');
     const mapOptions = {
         center: { lat: 20, lng: 0 },
         zoom: 2,
@@ -53,7 +79,9 @@ function initializeMap() {
         ]
     };
 
+    console.log('Creating Google Maps instance...');
     map = new google.maps.Map(document.getElementById('map'), mapOptions);
+    console.log('Google Maps instance created successfully');
 }
 
 // Setup event listeners
@@ -68,6 +96,9 @@ function setupEventListeners() {
     // Filters
     document.getElementById('countryFilter').addEventListener('change', handleFilters);
     document.getElementById('typeFilter').addEventListener('change', handleFilters);
+    
+    // Refresh button
+    document.getElementById('refreshData').addEventListener('click', loadUniversities);
 
     // Map controls
     document.getElementById('resetView').addEventListener('click', resetMapView);
@@ -96,10 +127,19 @@ function setupEventListeners() {
 async function loadUniversities() {
     showLoading(true);
     
+    // Add timeout to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - taking too long to load')), 30000); // 30 second timeout
+    });
+    
     try {
-        // For demo purposes, using sample data
-        // In production, replace this with actual Google Sheets API call
-        universities = await getSampleData();
+        console.log('Starting to fetch data from Google Sheets...');
+        
+        // Race between the fetch and timeout
+        const fetchPromise = fetchFromGoogleSheets();
+        universities = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        console.log('Data fetched successfully, processing...');
         
         // Populate filters
         populateFilters();
@@ -110,49 +150,153 @@ async function loadUniversities() {
         updateStats();
         
         showLoading(false);
+        console.log('Successfully loaded universities from Google Sheets');
+        
     } catch (error) {
-        console.error('Error loading universities:', error);
+        console.error('Error loading universities from Google Sheets:', error);
+        
+        // Show error message to user
+        showError(`Failed to load from Google Sheets: ${error.message}. Using sample data instead.`);
+        
+        // Fallback to sample data
+        try {
+            console.log('Loading sample data as fallback...');
+            universities = await getSampleData();
+            populateFilters();
+            filteredUniversities = [...universities];
+            displayUniversities();
+            updateStats();
+            console.log('Loaded sample data as fallback');
+        } catch (fallbackError) {
+            console.error('Error loading sample data:', fallbackError);
+            showError('Failed to load any data. Please check your internet connection and try again.');
+        }
+        
         showLoading(false);
-        showError('Failed to load universities. Please try again.');
     }
 }
-
-
 
 // Google Sheets API function (for production use)
 async function fetchFromGoogleSheets() {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEETS_CONFIG.SHEET_ID}/values/${GOOGLE_SHEETS_CONFIG.SHEET_NAME}?key=${GOOGLE_SHEETS_CONFIG.API_KEY}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    console.log('Fetching data from Google Sheets:', url);
     
-    if (!data.values) {
-        throw new Error('No data found in Google Sheets');
-    }
-    
-    // Assuming first row contains headers
-    const headers = data.values[0];
-    const rows = data.values.slice(1);
-    
-    return rows.map(row => {
-        const university = {};
-        headers.forEach((header, index) => {
-            university[header.toLowerCase().replace(/\s+/g, '_')] = row[index] || '';
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Google Sheets API Error:', response.status, errorText);
+            throw new Error(`Google Sheets API Error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Google Sheets response:', data);
+        
+        if (!data.values || data.values.length === 0) {
+            throw new Error('No data found in Google Sheets. Please check if the sheet has data and the sheet name is correct.');
+        }
+        
+        // Assuming first row contains headers
+        const headers = data.values[0];
+        const rows = data.values.slice(1);
+        
+        console.log('Headers:', headers);
+        console.log('Number of rows:', rows.length);
+        
+        const universities = rows.map((row, index) => {
+            const university = {};
+            headers.forEach((header, headerIndex) => {
+                const key = header.toLowerCase().replace(/\s+/g, '_');
+                let value = row[headerIndex] || '';
+                
+                // Convert numeric values
+                if (key === 'latitude' || key === 'longitude' || key === 'founded') {
+                    value = parseFloat(value) || 0;
+                }
+                
+                university[key] = value;
+            });
+            
+            console.log(`University ${index + 1}:`, university);
+            return university;
         });
-        return university;
-    });
+        
+        console.log('Total universities loaded:', universities.length);
+        return universities;
+        
+    } catch (error) {
+        console.error('Error fetching from Google Sheets:', error);
+        throw error;
+    }
+}
+
+// Get sample data (fallback function)
+async function getSampleData() {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return [
+        {
+            name: 'Harvard University',
+            country: 'United States',
+            city: 'Cambridge',
+            latitude: 42.3744,
+            longitude: -71.1169,
+            type: 'Private',
+            founded: 1636,
+            website: 'https://www.harvard.edu',
+            description: 'Harvard University is a private Ivy League research university in Cambridge, Massachusetts.'
+        },
+        {
+            name: 'University of Oxford',
+            country: 'United Kingdom',
+            city: 'Oxford',
+            latitude: 51.7520,
+            longitude: -1.2577,
+            type: 'Public',
+            founded: 1096,
+            website: 'https://www.ox.ac.uk',
+            description: 'The University of Oxford is a collegiate research university in Oxford, England.'
+        },
+        {
+            name: 'Stanford University',
+            country: 'United States',
+            city: 'Stanford',
+            latitude: 37.4275,
+            longitude: -122.1697,
+            type: 'Private',
+            founded: 1885,
+            website: 'https://www.stanford.edu',
+            description: 'Stanford University is a private research university in Stanford, California.'
+        }
+    ];
 }
 
 // Display universities on map and list
 function displayUniversities() {
+    console.log('Displaying universities...');
+    console.log('Filtered universities count:', filteredUniversities.length);
+    
     clearMarkers();
+    console.log('Markers cleared');
+    
     displayMapMarkers();
+    console.log('Map markers displayed');
+    
     displayUniversityList();
+    console.log('University list displayed');
 }
 
 // Display markers on map
 function displayMapMarkers() {
+    console.log('Starting to display map markers...');
+    console.log('Number of universities to display:', filteredUniversities.length);
+    
     filteredUniversities.forEach((university, index) => {
+        console.log(`Creating marker ${index + 1} for:`, university.name);
+        
         const marker = new google.maps.Marker({
             position: { lat: parseFloat(university.latitude), lng: parseFloat(university.longitude) },
             map: map,
@@ -182,11 +326,27 @@ function displayMapMarkers() {
         infoWindows.push(infoWindow);
     });
 
+    console.log('All markers created, adding clustering...');
+
     // Add clustering
-    if (isClustered) {
-        markerClusterer = new MarkerClusterer(map, markers, {
-            imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-        });
+    if (isClustered && typeof markerClusterer !== 'undefined') {
+        try {
+            console.log('Creating MarkerClusterer...');
+            markerClustererInstance = new markerClusterer.MarkerClusterer({
+                map,
+                markers,
+                algorithm: new markerClusterer.SuperClusterAlgorithm({
+                    radius: 100,
+                    maxZoom: 15
+                })
+            });
+            console.log('MarkerClusterer created successfully');
+        } catch (error) {
+            console.warn('MarkerClusterer not available, clustering disabled:', error);
+            isClustered = false;
+        }
+    } else {
+        console.log('Clustering disabled or MarkerClusterer not available');
     }
 }
 
@@ -338,13 +498,24 @@ function resetMapView() {
 function toggleClustering() {
     isClustered = !isClustered;
     
-    if (isClustered) {
-        markerClusterer = new MarkerClusterer(map, markers, {
-            imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
-        });
+    if (isClustered && typeof markerClusterer !== 'undefined') {
+        try {
+            markerClustererInstance = new markerClusterer.MarkerClusterer({
+                map,
+                markers,
+                algorithm: new markerClusterer.SuperClusterAlgorithm({
+                    radius: 100,
+                    maxZoom: 15
+                })
+            });
+        } catch (error) {
+            console.warn('MarkerClusterer not available, clustering disabled:', error);
+            isClustered = false;
+        }
     } else {
-        if (markerClusterer) {
-            markerClusterer.clearMarkers();
+        if (markerClustererInstance) {
+            markerClustererInstance.clearMarkers();
+            markerClustererInstance = null;
         }
     }
 }
@@ -377,8 +548,9 @@ function clearMarkers() {
     markers = [];
     infoWindows = [];
     
-    if (markerClusterer) {
-        markerClusterer.clearMarkers();
+    if (markerClustererInstance) {
+        markerClustererInstance.clearMarkers();
+        markerClustererInstance = null;
     }
 }
 

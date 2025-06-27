@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCwYUBXjR5O8rchOot4Ot3dY8MjIeFgS90&libraries=places"></script>
+    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -36,6 +37,9 @@
                     <option value="Public">Public</option>
                     <option value="Private">Private</option>
                 </select>
+                <button id="refreshData" class="refresh-btn" title="Refresh data from Google Sheets">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
         </div>
 

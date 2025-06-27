@@ -78,18 +78,39 @@ body {
 
 .filters {
     display: flex;
-    gap: 10px;
+    gap: 15px;
+    align-items: center;
 }
 
 .filter-select {
-    padding: 12px 15px;
-    border: none;
-    border-radius: 25px;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
     background: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     font-size: 14px;
+    min-width: 120px;
+}
+
+.refresh-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
     cursor: pointer;
-    outline: none;
+    font-size: 14px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn:hover {
+    background: #218838;
+}
+
+.refresh-btn i {
+    font-size: 12px;
 }
 
 /* Stats */
