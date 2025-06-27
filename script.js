@@ -10,9 +10,9 @@ let isClustered = true;
 // Google Sheets configuration
 const GOOGLE_SHEETS_CONFIG = {
     // Replace with your Google Sheets ID
-    SHEET_ID: 'YOUR_GOOGLE_SHEETS_ID',
+    SHEET_ID: '1c4L79Iqlf8frj-8dxk2sBQT3bM0G-Uj3gE8HjR_rVOM',
     // Replace with your Google Sheets API key
-    API_KEY: 'YOUR_GOOGLE_SHEETS_API_KEY',
+    API_KEY: 'AIzaSyCtGCzaAoVnjTK6CrETdMEaSPeeAZ8i1DE',
     // Sheet name (default is 'Sheet1')
     SHEET_NAME: 'Universities'
 };
