@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global University Map</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-graduation-cap"></i> Global University Map</h1>
+                <p>Explore universities around the world</p>
+            </div>
+        </header>
+
+        <!-- Search and Filters -->
+        <div class="controls">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search universities..." class="search-input">
+                <button id="searchBtn" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div class="filters">
+                <select id="countryFilter" class="filter-select">
+                    <option value="">All Countries</option>
+                </select>
+                <select id="typeFilter" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="Public">Public</option>
+                    <option value="Private">Private</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card">
+                <i class="fas fa-university"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalUniversities">0</span>
+                    <span class="stat-label">Universities</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-globe"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalCountries">0</span>
+                    <span class="stat-label">Countries</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalRegions">0</span>
+                    <span class="stat-label">Regions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button id="resetView" class="map-btn">
+                        <i class="fas fa-home"></i> Reset View
+                    </button>
+                    <button id="toggleClusters" class="map-btn">
+                        <i class="fas fa-layer-group"></i> Toggle Clusters
+                    </button>
+                </div>
+            </div>
+
+            <!-- University List -->
+            <div class="university-list">
+                <div class="list-header">
+                    <h3>Universities</h3>
+                    <div class="list-controls">
+                        <button id="sortBtn" class="list-btn">
+                            <i class="fas fa-sort"></i> Sort
+                        </button>
+                        <button id="toggleList" class="list-btn">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="list-container" id="universityList">
+                    <!-- Universities will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Loading universities...</p>
+            </div>
+        </div>
+
+        <!-- University Details Modal -->
+        <div id="universityModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalContent">
+                    <!-- University details will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
